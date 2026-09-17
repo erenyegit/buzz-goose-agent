@@ -39,22 +39,27 @@ The agent only makes outbound connections to the relay and the model provider. I
 - A running Buzz relay. Deploy one on Akash with the [Buzz Relayer SDL](https://github.com/akash-network/awesome-akash/tree/master/Buzz-Relayer), or run the [official compose stack](https://github.com/block/buzz/tree/main/deploy/compose).
 - The [Buzz Desktop app](https://github.com/block/buzz/releases), to manage the relay and add the agent to channels.
 - An [AkashML](https://akashml.com) API key, or a key for one of the alternative providers.
+- An Akash provider for this deployment that is **not** the one hosting your relay (see Troubleshooting).
 
 ## Setup
 
 **1. Generate an agent keypair**
 
-Each agent needs its own Nostr identity. Never reuse the relay key.
+Each agent needs its own Nostr identity. Never reuse the relay key. Open a shell on your **relay** deployment and run:
 
 ```bash
-docker run --rm --entrypoint /usr/local/bin/buzz-admin ghcr.io/block/buzz:main generate-key
+buzz-admin generate-key
 ```
 
-This prints a hex secret key and public key. The secret key goes in the SDL as `BUZZ_PRIVATE_KEY`. Save it right away — it is not stored anywhere and cannot be recovered.
+The secret key goes in the SDL as `BUZZ_PRIVATE_KEY`. Save it right away — it is not stored anywhere and cannot be recovered.
 
 **2. Add the agent as a relay member**
 
-In Buzz Desktop, go to Settings → Invites and invite the agent's public key as a member of your community.
+Still in the relay's shell, using the public key from the previous step:
+
+```bash
+buzz-admin add-member --pubkey <agent public key> --role member
+```
 
 **3. Fill in the SDL**
 
@@ -62,13 +67,39 @@ Replace every `REPLACE_WITH_*` value in `deploy.yaml`. If you build your own ima
 
 **4. Deploy**
 
-Deploy `deploy.yaml` through [Akash Console](https://console.akash.network) or the Akash CLI.
+Deploy `deploy.yaml` through [Akash Console](https://console.akash.network) or the Akash CLI, **on a different provider than your relay** (see [Troubleshooting](#troubleshooting)).
+
+**5. Give the agent a profile and a channel**
+
+`buzz-acp` publishes presence but not a profile, and relay membership does not put the agent in any channel. Both are one command each from a shell on the **agent** deployment, where `BUZZ_PRIVATE_KEY` and `BUZZ_RELAY_URL` are already set:
+
+```bash
+buzz users set-profile --name goose --about "goose agent on Akash"
+buzz channels list
+buzz channels join --channel <channel id from the list>
+```
+
+Without the profile the agent is invisible to Buzz Desktop's member search and @-mention list. Without a channel it connects and then sits idle.
 
 ## Verifying
 
-Open the deployment logs. Once `buzz-acp` has connected to the relay, it logs how many channels it found, for example `discovered 1 channel(s)`.
+Open the deployment logs. A healthy start looks like this:
 
-Then, in Buzz Desktop, add the agent to a channel and @mention it. It should reply in the same channel.
+```
+agent initialized name="goose"
+connected to relay at ws://<your relay>
+agent owner: <your pubkey>
+discovered 1 channel(s)
+presence set to online
+```
+
+If you join a channel while the agent is running, it picks that up on its own:
+
+```
+membership notification: subscribing to new channel channel_id=<uuid>
+```
+
+Then @mention the agent in that channel from Buzz Desktop. The first reply takes a few seconds: the harness starts a session, goose calls the model, and the answer is posted back through the `buzz` CLI.
 
 ## Configuration
 
@@ -140,7 +171,13 @@ On an Apple Silicon Mac this compiles Rust under emulation and is very slow. A C
 
 **Model not found** — the model id is not in the provider's current catalog. List the available ids with the `curl` command above.
 
+**`initial relay connect attempt N failed: Connection closed`** — the agent cannot reach the relay. Deploy the agent on a **different Akash provider than your relay**: a container generally cannot reach its own provider's public hostname and port, so the connection times out even though the relay is healthy and reachable from everywhere else.
+
 **The agent connects but never replies** — check that the agent's pubkey is a relay member, that the agent is in the channel, and that you are its owner. With `BUZZ_ACP_SUBSCRIBE=mentions`, you also have to @mention it.
+
+**`no channel subscriptions resolved — agent will sit idle`** — the agent is a relay member but not in any channel. Join one with `buzz channels join` (see Setup step 5), or add it from Buzz Desktop.
+
+**goose does not show up in Buzz Desktop's search or @-mention list** — it has no profile yet. Run `buzz users set-profile --name goose` from the agent's shell.
 
 **Long tasks get cut off** — a tool call ran longer than `BUZZ_ACP_IDLE_TIMEOUT` without output. Raise the value.
 

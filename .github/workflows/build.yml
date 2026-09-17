@@ -3,6 +3,7 @@ name: build and push image
 on:
   push:
     branches: [main]
+    paths-ignore: ['README.md']
   workflow_dispatch:
 
 jobs:
