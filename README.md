@@ -32,7 +32,7 @@ A single container that:
 - Uses AkashML, Anthropic, OpenRouter, or Groq for the model
 - Keeps goose's sessions and settings on a persistent volume
 
-The agent only makes outbound connections to the relay and the model provider. It does not expose an agent API to the internet.
+The agent only makes outbound connections, to the relay and to the model provider, and serves nothing itself. The SDL still declares one globally exposed port because Akash requires at least one per deployment; nothing listens on it.
 
 ## Prerequisites
 
