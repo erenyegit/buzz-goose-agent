@@ -4,15 +4,17 @@ version: "2.0"
 services:
   buzz-goose-agent:
     image: erenyegit/buzz-goose-agent:1.0
+    # The agent only makes outbound connections, to the relay and to the model
+    # provider, so nothing has to be reachable from the internet.
     expose:
       - port: 3000
         as: 3000
         proto: tcp
         to:
-          - global: true
+          - global: false
     env:
       # Agent Nostr Identity
-      # Generate with: docker run --rm --entrypoint /usr/local/bin/buzz-admin ghcr.io/block/buzz:main generate-key
+      # Generate with `buzz-admin generate-key` from a shell on your relay deployment
       # Each agent needs its own unique keypair, never reuse the relay key
       - BUZZ_PRIVATE_KEY=REPLACE_WITH_AGENT_SECRET_KEY
 

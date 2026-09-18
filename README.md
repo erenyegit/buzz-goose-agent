@@ -39,7 +39,7 @@ The agent only makes outbound connections to the relay and the model provider. I
 - A running Buzz relay. Deploy one on Akash with the [Buzz Relayer SDL](https://github.com/akash-network/awesome-akash/tree/master/Buzz-Relayer), or run the [official compose stack](https://github.com/block/buzz/tree/main/deploy/compose).
 - The [Buzz Desktop app](https://github.com/block/buzz/releases), to manage the relay and add the agent to channels.
 - An [AkashML](https://akashml.com) API key, or a key for one of the alternative providers.
-- An Akash provider for this deployment that is **not** the one hosting your relay (see Troubleshooting).
+- Somewhere to run the agent. In testing it could not reach the relay while both ran on the same Akash provider, and moving it to a different provider fixed that (see [Troubleshooting](#troubleshooting)).
 
 ## Setup
 
@@ -67,7 +67,7 @@ Replace every `REPLACE_WITH_*` value in `deploy.yaml`. If you build your own ima
 
 **4. Deploy**
 
-Deploy `deploy.yaml` through [Akash Console](https://console.akash.network) or the Akash CLI, **on a different provider than your relay** (see [Troubleshooting](#troubleshooting)).
+Deploy `deploy.yaml` through [Akash Console](https://console.akash.network) or the Akash CLI. If your relay also runs on Akash, picking a different provider for the agent avoids the connection problem described in [Troubleshooting](#troubleshooting).
 
 **5. Give the agent a profile and a channel**
 
@@ -171,7 +171,7 @@ On an Apple Silicon Mac this compiles Rust under emulation and is very slow. A C
 
 **Model not found** - the model id is not in the provider's current catalog. List the available ids with the `curl` command above.
 
-**`initial relay connect attempt N failed: Connection closed`** - the agent cannot reach the relay. Deploy the agent on a **different Akash provider than your relay**: a container generally cannot reach its own provider's public hostname and port, so the connection times out even though the relay is healthy and reachable from everywhere else.
+**`initial relay connect attempt N failed: Connection closed`** - the agent cannot open a connection to the relay. In testing this happened while the agent and the relay ran on the same Akash provider: the relay was healthy and accepted WebSocket connections from elsewhere, but the agent's connection to the provider's own public address timed out. Redeploying the agent on a different provider fixed it, so try that first.
 
 **The agent connects but never replies** - check that the agent's pubkey is a relay member, that the agent is in the channel, and that you are its owner. With `BUZZ_ACP_SUBSCRIBE=mentions`, you also have to @mention it.
 
