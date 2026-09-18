@@ -1,6 +1,6 @@
 # Buzz Goose Agent on Akash
 
-Run [goose](https://github.com/aaif-goose/goose) as a headless AI agent inside a [Buzz](https://github.com/block/buzz) community on Akash Network. The agent listens for mentions in Buzz channels and answers using your chosen LLM provider — AkashML by default, so both the agent and its model run on Akash.
+Run [goose](https://github.com/aaif-goose/goose) as a headless AI agent inside a [Buzz](https://github.com/block/buzz) community on Akash Network. The agent listens for mentions in Buzz channels and answers using your chosen LLM provider. AkashML is the default, so both the agent and its model run on Akash.
 
 ## What is Buzz?
 
@@ -19,7 +19,7 @@ Buzz Relay ──WS──> buzz-acp ──stdio──> goose acp
 
 - **It is `buzz-acp`'s default agent.** `BUZZ_ACP_AGENT_COMMAND` defaults to `goose`, and `buzz-acp` launches it as `goose acp`.
 - **It speaks ACP natively.** Codex and Claude Code need adapter packages (`codex-acp`, `claude-agent-acp`); goose does not.
-- **It needs no config files.** goose reads its provider, model, and API key from environment variables, so the whole template is configured from the SDL — no entrypoint script.
+- **It needs no config files.** goose reads its provider, model, and API key from environment variables, so the whole template is configured from the SDL, with no entrypoint script.
 
 ## What does this deploy?
 
@@ -51,7 +51,7 @@ Each agent needs its own Nostr identity. Never reuse the relay key. Open a shell
 buzz-admin generate-key
 ```
 
-The secret key goes in the SDL as `BUZZ_PRIVATE_KEY`. Save it right away — it is not stored anywhere and cannot be recovered.
+The secret key goes in the SDL as `BUZZ_PRIVATE_KEY`. Save it right away, because it is not stored anywhere and cannot be recovered.
 
 **2. Add the agent as a relay member**
 
@@ -165,23 +165,23 @@ On an Apple Silicon Mac this compiles Rust under emulation and is very slow. A C
 
 ## Troubleshooting
 
-**`No api key passed in`** — the key is not reaching goose. Check that `OPENAI_API_KEY` is set in the SDL.
+**`No api key passed in`** - the key is not reaching goose. Check that `OPENAI_API_KEY` is set in the SDL.
 
-**`404` from the provider** — `OPENAI_HOST` should be the root only (`https://api.akashml.com`), with the path in `OPENAI_BASE_PATH`.
+**`404` from the provider** - `OPENAI_HOST` should be the root only (`https://api.akashml.com`), with the path in `OPENAI_BASE_PATH`.
 
-**Model not found** — the model id is not in the provider's current catalog. List the available ids with the `curl` command above.
+**Model not found** - the model id is not in the provider's current catalog. List the available ids with the `curl` command above.
 
-**`initial relay connect attempt N failed: Connection closed`** — the agent cannot reach the relay. Deploy the agent on a **different Akash provider than your relay**: a container generally cannot reach its own provider's public hostname and port, so the connection times out even though the relay is healthy and reachable from everywhere else.
+**`initial relay connect attempt N failed: Connection closed`** - the agent cannot reach the relay. Deploy the agent on a **different Akash provider than your relay**: a container generally cannot reach its own provider's public hostname and port, so the connection times out even though the relay is healthy and reachable from everywhere else.
 
-**The agent connects but never replies** — check that the agent's pubkey is a relay member, that the agent is in the channel, and that you are its owner. With `BUZZ_ACP_SUBSCRIBE=mentions`, you also have to @mention it.
+**The agent connects but never replies** - check that the agent's pubkey is a relay member, that the agent is in the channel, and that you are its owner. With `BUZZ_ACP_SUBSCRIBE=mentions`, you also have to @mention it.
 
-**`no channel subscriptions resolved — agent will sit idle`** — the agent is a relay member but not in any channel. Join one with `buzz channels join` (see Setup step 5), or add it from Buzz Desktop.
+**`no channel subscriptions resolved — agent will sit idle`** - the agent is a relay member but not in any channel. Join one with `buzz channels join` (see Setup step 5), or add it from Buzz Desktop.
 
-**goose does not show up in Buzz Desktop's search or @-mention list** — it has no profile yet. Run `buzz users set-profile --name goose` from the agent's shell.
+**goose does not show up in Buzz Desktop's search or @-mention list** - it has no profile yet. Run `buzz users set-profile --name goose` from the agent's shell.
 
-**Long tasks get cut off** — a tool call ran longer than `BUZZ_ACP_IDLE_TIMEOUT` without output. Raise the value.
+**Long tasks get cut off** - a tool call ran longer than `BUZZ_ACP_IDLE_TIMEOUT` without output. Raise the value.
 
-**Tool calls fail or loop** — the model is not handling tool calls well. Try a different model.
+**Tool calls fail or loop** - the model is not handling tool calls well. Try a different model.
 
 ## Security notes
 
